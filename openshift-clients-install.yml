@@ -1,0 +1,98 @@
+# ---
+# File:          openshift-clients-install.yml 
+# Author:        Berto <berto@acanorex.io>
+# Created:       2025-05-01
+# Last Modified: 2025-05-22
+#
+# Purpose:
+#   Installs the OpenShift cli client binaries and other complimentary tools used to operate an
+#   OpenShift/Kubernetes cluster. Binaries are installed in /usr/local/bin.
+
+#     - openshift-install binary
+#     - oc binary
+#     - kubectl binary
+#     - butane binary
+#     - helm binary
+#
+# Package source:
+#   https://mirror.openshift.com/pub/
+#
+# Variables:
+#   - repo_base_url: (string, required). Default: "none"
+#   - ocp_arch: (string, required). Default: "none"
+#   - ocp_version: (string, required). Default: "none"
+#   - ocp_package: (list, required). Default: "none"
+#   - butane_version: (string, required). Default: "none"
+#   - butane_package: (string, required). Default: "none"
+#   - helm_version: (string, required). Default: "none"
+#   - helm_package: (string, required). Default: "none"
+#
+# Tags:
+#   - [install_ocp_client]
+#   - [install_butane_client]
+#   - [install_helm_client]
+# ---
+---
+- name: Install Linux programs needed to install OpenShift
+  hosts: localhost
+  vars:
+    repo_base_url: 'https://mirror.openshift.com/pub/openshift-v4'
+    ocp_arch: amd64
+    ocp_version: 4.18.13
+    ocp_package:
+      - 'openshift-client-linux-{{ ocp_version }}.tar.gz'
+      - 'openshift-install-linux-{{ ocp_version }}.tar.gz'
+    butane_version: v0.23.0-0
+    butane_package: 'butane-{{ ocp_arch }}'
+    helm_version: 3.15.4
+    helm_package: 'helm-linux-{{ ocp_arch }}.tar.gz'
+
+  tasks:
+    - name: 'Install OpenShift clients version: {{ ocp_version }}'
+      ansible.builtin.unarchive:
+        src: '{{ repo_base_url }}/{{ ocp_arch }}/clients/ocp/{{ ocp_version }}/{{ item }}'
+        dest: /usr/local/bin
+        remote_src: yes
+        keep_newer: true
+      loop: '{{ ocp_package }}'
+      when: 
+        - ansible_system == 'Linux'
+        - ansible_architecture == 'x86_64'
+      tags:
+        - install_ocp_client
+
+    - name: 'Install Butane client version: {{ butane_version }}'
+      ansible.builtin.get_url:
+        url: '{{ repo_base_url }}/{{ ocp_arch }}/clients/butane/{{ butane_version }}/{{ butane_package }}'
+        dest: /usr/local/bin/butane
+        mode: 755
+      when:
+        - ansible_system == 'Linux'
+        - ansible_architecture == 'x86_64'
+      tags:
+        - install_butane_client
+
+    - name: 'Install Helm client version: {{ helm_version }}'
+      ansible.builtin.unarchive:
+        src: '{{ repo_base_url }}/{{ ocp_arch }}/clients/helm/{{ helm_version }}/{{ helm_package }}'
+        dest: /usr/local/bin
+        remote_src: yes
+        keep_newer: true
+      when:
+        - ansible_system == 'Linux'
+        - ansible_architecture == 'x86_64'
+      tags:
+        - install_helm_client
+
+    - name: Create symlink to the Helm program
+      ansible.builtin.file:
+        src: '/usr/local/bin/helm-linux-{{ ocp_arch  }}'
+        dest: /usr/local/bin/helm
+        owner: root
+        group: root
+        state: link
+      when:
+        - ansible_system == 'Linux'
+        - ansible_architecture == 'x86_64'
+      tags:
+        - install_helm_client
