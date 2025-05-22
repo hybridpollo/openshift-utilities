@@ -96,3 +96,19 @@
         - ansible_architecture == 'x86_64'
       tags:
         - install_helm_client
+
+    - name: We are done here. Goodbye horses......
+      ansible.builtin.debug:
+        msg:
+          - 'The Openshift clients are now configured under the /usr/local/bin directory.'
+          - 'Make sure /usr/local/bin exists in your shell $PATH'
+          - 'For the latest releases of these programs: https://mirror.openshift.com/pub/'
+          - 'You break it, you buy it, my friend.'
+      when:
+        - ansible_system == 'Linux'
+        - ansible_architecture == 'x86_64'
+      tags:
+        - install_ocp_client
+        - install_butane_client
+        - install_helm_client
+        - bye
