@@ -53,7 +53,8 @@
         src: '{{ repo_base_url }}/{{ ocp_arch }}/clients/ocp/{{ ocp_version }}/{{ item }}'
         dest: /usr/local/bin
         remote_src: yes
-        keep_newer: true
+        exclude:
+          - README.md
       loop: '{{ ocp_package }}'
       when: 
         - ansible_system == 'Linux'
