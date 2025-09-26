@@ -1,13 +1,8 @@
-# ---
-# File:          openshift-clients-install.yml 
-# Author:        Berto <berto@acanorex.io>
-# Created:       2025-05-01
-# Last Modified: 2025-05-22
 #
 # Purpose:
 #   Installs the OpenShift cli client binaries and other complimentary tools used to operate an
 #   OpenShift/Kubernetes cluster. Binaries are installed in /usr/local/bin.
-
+#
 #     - openshift-install binary
 #     - oc binary
 #     - kubectl binary
@@ -130,9 +125,9 @@
     - name: We are done here. Goodbye horses.....
       ansible.builtin.debug:
         msg:
-          - 'The Openshift clients are now configured under the /usr/local/bin directory.'
-          - 'Make sure /usr/local/bin exists in your shell $PATH'
-          - 'For the latest releases of these programs: https://mirror.openshift.com/pub/'
+          - 'The Openshift client and friends are  now installed under the /usr/local/bin directory.'
+          - 'Make sure /usr/local/bin exists in your shells $PATH'
+          - 'For the latest releases of these binaries: https://mirror.openshift.com/pub/'
           - 'You break it, you buy it, my friend.'
       when:
         - ansible_system == 'Linux'
