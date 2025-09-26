@@ -40,7 +40,7 @@
     butane_version: v0.24.0-1
     butane_package: 'butane-{{ ocp_arch }}'
     helm_version: 3.17.1
-    helm_package: 'helm-linux-{{ ocp_arch }}.tar.gz'
+    helm_package: 'helm-linux-{{ ocp_arch }}'
 
   tasks:
     - name: Get OpenShift clients currently installed version
@@ -99,23 +99,10 @@
         - install_butane_client
 
     - name: 'Install Helm client version: {{ helm_version }}'
-      ansible.builtin.unarchive:
-        src: '{{ repo_base_url }}/{{ ocp_arch }}/clients/helm/{{ helm_version }}/{{ helm_package }}'
-        dest: /usr/local/bin
-        remote_src: yes
-      when:
-        - ansible_system == 'Linux'
-        - ansible_architecture == 'x86_64'
-      tags:
-        - install_helm_client
-
-    - name: Create symlink to the Helm program
-      ansible.builtin.file:
-        src: '/usr/local/bin/helm-linux-{{ ocp_arch  }}'
+      ansible.builtin.get_url:
+        url: '{{ repo_base_url }}/{{ ocp_arch }}/clients/helm/{{ helm_version }}/{{ helm_package }}'
         dest: /usr/local/bin/helm
-        owner: root
-        group: root
-        state: link
+        mode: 0755 
       when:
         - ansible_system == 'Linux'
         - ansible_architecture == 'x86_64'
