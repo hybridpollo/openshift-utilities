@@ -33,11 +33,11 @@
   vars:
     repo_base_url: 'https://mirror.openshift.com/pub/openshift-v4'
     ocp_arch: amd64
-    ocp_version: 4.19.13
+    ocp_version: 4.20.6
     ocp_package:
       - 'openshift-client-linux-{{ ocp_version }}.tar.gz'
       - 'openshift-install-linux-{{ ocp_version }}.tar.gz'
-    butane_version: v0.24.0-1
+    butane_version: v0.25.1-1
     butane_package: 'butane-{{ ocp_arch }}'
     helm_version: 3.17.1
     helm_package: 'helm-linux-{{ ocp_arch }}'
