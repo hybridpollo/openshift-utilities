@@ -33,7 +33,7 @@
   vars:
     repo_base_url: 'https://mirror.openshift.com/pub/openshift-v4'
     ocp_arch: amd64
-    ocp_version: 4.20.6
+    ocp_version: 4.20.8
     ocp_package:
       - 'openshift-client-linux-{{ ocp_version }}.tar.gz'
       - 'openshift-install-linux-{{ ocp_version }}.tar.gz'
@@ -66,8 +66,8 @@
         - oc
         - kubectl
       when:
-        - ansible_system == 'Linux'
-        - ansible_architecture == 'x86_64'
+        - ansible_facts['system'] == 'Linux'
+        - ansible_facts['architecture'] == 'x86_64'
         - oc_version_installed != ocp_version
       tags:
         - install_ocp_client
@@ -81,8 +81,8 @@
           - README.md
       loop: '{{ ocp_package }}'
       when:
-        - ansible_system == 'Linux'
-        - ansible_architecture == 'x86_64'
+        - ansible_facts['system'] == 'Linux'
+        - ansible_facts['architecture'] == 'x86_64'
         - oc_version_installed != ocp_version
       tags:
         - install_ocp_client
@@ -93,8 +93,8 @@
         dest: /usr/local/bin/butane
         mode: 755
       when:
-        - ansible_system == 'Linux'
-        - ansible_architecture == 'x86_64'
+        - ansible_facts['system'] == 'Linux'
+        - ansible_facts['architecture'] == 'x86_64'
       tags:
         - install_butane_client
 
@@ -104,8 +104,8 @@
         dest: /usr/local/bin/helm
         mode: 0755 
       when:
-        - ansible_system == 'Linux'
-        - ansible_architecture == 'x86_64'
+        - ansible_facts['system'] == 'Linux'
+        - ansible_facts['architecture'] == 'x86_64'
       tags:
         - install_helm_client
 
@@ -117,8 +117,8 @@
           - 'For the latest releases of these binaries: https://mirror.openshift.com/pub/'
           - 'You break it, you buy it, my friend.'
       when:
-        - ansible_system == 'Linux'
-        - ansible_architecture == 'x86_64'
+        - ansible_facts['system'] == 'Linux'
+        - ansible_facts['architecture'] == 'x86_64'
       tags:
         - install_ocp_client
         - install_butane_client
