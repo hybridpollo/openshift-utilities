@@ -43,84 +43,77 @@
     helm_package: 'helm-linux-{{ ocp_arch }}'
 
   tasks:
-    - name: Get OpenShift clients currently installed version
-      shell: |
-        /usr/local/bin/oc version --client -o json | jq -r .releaseClientVersion
-      register: oc_client_version
-      changed_when: false
-      tags:
-        - install_ocp_client
-
-    - name: Set fact for current OpenShift client installation
-      set_fact:
-        oc_version_installed: '{{ oc_client_version.stdout }}'
-      tags:
-        - install_ocp_client
-
-    - name: Remove previous versions of OpenShift clients if target version is different
-      ansible.builtin.file:
-        path: '/usr/local/bin/{{ item }}'
-        state: absent
-      loop:
-        - openshift-install
-        - oc
-        - kubectl
+    - name: Ensure tasks run on Linux systems only
       when:
         - ansible_facts['system'] == 'Linux'
         - ansible_facts['architecture'] == 'x86_64'
-        - oc_version_installed != ocp_version
-      tags:
-        - install_ocp_client
 
-    - name: 'Install OpenShift clients version: {{ ocp_version }}'
-      ansible.builtin.unarchive:
-        src: '{{ repo_base_url }}/{{ ocp_arch }}/clients/ocp/{{ ocp_version }}/{{ item }}'
-        dest: /usr/local/bin
-        remote_src: yes
-        exclude:
-          - README.md
-      loop: '{{ ocp_package }}'
-      when:
-        - ansible_facts['system'] == 'Linux'
-        - ansible_facts['architecture'] == 'x86_64'
-        - oc_version_installed != ocp_version
-      tags:
-        - install_ocp_client
+      block:
+        - name: Get OpenShift clients currently installed version
+          shell: |
+            /usr/local/bin/oc version --client -o json | jq -r .releaseClientVersion
+          register: oc_client_version
+          changed_when: false
+          tags:
+            - install_ocp_client
 
-    - name: 'Install Butane client version: {{ butane_version }}'
-      ansible.builtin.get_url:
-        url: '{{ repo_base_url }}/{{ ocp_arch }}/clients/butane/{{ butane_version }}/{{ butane_package }}'
-        dest: /usr/local/bin/butane
-        mode: 755
-      when:
-        - ansible_facts['system'] == 'Linux'
-        - ansible_facts['architecture'] == 'x86_64'
-      tags:
-        - install_butane_client
+        - name: Set fact for current OpenShift client installation
+          set_fact:
+            oc_version_installed: '{{ oc_client_version.stdout }}'
+          tags:
+            - install_ocp_client
 
-    - name: 'Install Helm client version: {{ helm_version }}'
-      ansible.builtin.get_url:
-        url: '{{ repo_base_url }}/{{ ocp_arch }}/clients/helm/{{ helm_version }}/{{ helm_package }}'
-        dest: /usr/local/bin/helm
-        mode: 0755 
-      when:
-        - ansible_facts['system'] == 'Linux'
-        - ansible_facts['architecture'] == 'x86_64'
-      tags:
-        - install_helm_client
+        - name: Remove previous versions of OpenShift clients if target version is different
+          ansible.builtin.file:
+            path: '/usr/local/bin/{{ item }}'
+            state: absent
+          loop:
+            - openshift-install
+            - oc
+            - kubectl
+          when:
+            - oc_version_installed != ocp_version
+          tags:
+            - install_ocp_client
 
-    - name: We are done here. Goodbye horses.....
-      ansible.builtin.debug:
-        msg:
-          - 'The Openshift client and friends are  now installed under the /usr/local/bin directory.'
-          - 'Make sure /usr/local/bin exists in your shells $PATH'
-          - 'For the latest releases of these binaries: https://mirror.openshift.com/pub/'
-          - 'You break it, you buy it, my friend.'
-      when:
-        - ansible_facts['system'] == 'Linux'
-        - ansible_facts['architecture'] == 'x86_64'
-      tags:
-        - install_ocp_client
-        - install_butane_client
-        - install_helm_client
-        - bye
+        - name: 'Install OpenShift clients version: {{ ocp_version }}'
+          ansible.builtin.unarchive:
+            src: '{{ repo_base_url }}/{{ ocp_arch }}/clients/ocp/{{ ocp_version }}/{{ item }}'
+            dest: /usr/local/bin
+            remote_src: yes
+            exclude:
+              - README.md
+          loop: '{{ ocp_package }}'
+          when:
+            - oc_version_installed != ocp_version
+          tags:
+            - install_ocp_client
+
+        - name: 'Install Butane client version: {{ butane_version }}'
+          ansible.builtin.get_url:
+            url: '{{ repo_base_url }}/{{ ocp_arch }}/clients/butane/{{ butane_version }}/{{ butane_package }}'
+            dest: /usr/local/bin/butane
+            mode: 755
+          tags:
+            - install_butane_client
+
+        - name: 'Install Helm client version: {{ helm_version }}'
+          ansible.builtin.get_url:
+            url: '{{ repo_base_url }}/{{ ocp_arch }}/clients/helm/{{ helm_version }}/{{ helm_package }}'
+            dest: /usr/local/bin/helm
+            mode: 0755 
+          tags:
+            - install_helm_client
+
+        - name: We are done here. Goodbye horses.....
+          ansible.builtin.debug:
+            msg:
+              - 'The Openshift client and friends are  now installed under the /usr/local/bin directory.'
+              - 'Make sure /usr/local/bin exists in your shells $PATH'
+              - 'For the latest releases of these binaries: https://mirror.openshift.com/pub/'
+              - 'You break it, you buy it, my friend.'
+          tags:
+            - install_ocp_client
+            - install_butane_client
+            - install_helm_client
+            - bye
