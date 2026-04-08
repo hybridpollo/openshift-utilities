@@ -33,11 +33,11 @@
   vars:
     repo_base_url: 'https://mirror.openshift.com/pub/openshift-v4'
     ocp_arch: amd64
-    ocp_version: 4.20.8
+    ocp_version: 4.21.8
     ocp_package:
       - 'openshift-client-linux-{{ ocp_version }}.tar.gz'
       - 'openshift-install-linux-{{ ocp_version }}.tar.gz'
-    butane_version: v0.25.1-1
+    butane_version: v0.26.0-1
     butane_package: 'butane-{{ ocp_arch }}'
     helm_version: 3.17.1
     helm_package: 'helm-linux-{{ ocp_arch }}'
@@ -49,19 +49,35 @@
         - ansible_facts['architecture'] == 'x86_64'
 
       block:
-        - name: Get OpenShift clients currently installed version
+        - name: Get OpenShift clients installed version
           shell: |
             /usr/local/bin/oc version --client -o json | jq -r .releaseClientVersion
           register: oc_client_version
           changed_when: false
+          failed_when: false
           tags:
             - install_ocp_client
 
         - name: Set fact for current OpenShift client installation
           set_fact:
-            oc_version_installed: '{{ oc_client_version.stdout }}'
+            oc_version_installed: '{{ oc_client_version.stdout if oc_client_version.rc == 0 else "not_installed" }}'
           tags:
             - install_ocp_client
+
+        - name: Get butane client installed version
+          shell: |
+            /usr/local/bin/butane -V | awk '{ print $2 }'
+          register: butane_client_version
+          changed_when: false
+          failed_when: false
+          tags:
+            - install_butane_client
+
+        - name: Set fact for current butane client installation
+          set_fact:
+            butane_version_installed: '{{ butane_client_version.stdout if butane_client_version.rc == 0 else "not_installed" }}'
+          tags:
+            - install_butane_client
 
         - name: Remove previous versions of OpenShift clients if target version is different
           ansible.builtin.file:
@@ -89,31 +105,66 @@
           tags:
             - install_ocp_client
 
+        - name: Remove previous versions of butane clients if target version is different
+          ansible.builtin.file:
+            path: /usr/local/bin/butane
+            state: absent
+          when:
+            - butane_version_installed != butane_version
+          tags:
+            - install_ocp_client
+
         - name: 'Install Butane client version: {{ butane_version }}'
           ansible.builtin.get_url:
             url: '{{ repo_base_url }}/{{ ocp_arch }}/clients/butane/{{ butane_version }}/{{ butane_package }}'
             dest: /usr/local/bin/butane
-            mode: 755
+            mode: 0755
+          when:
+            - butane_version_installed != butane_version
           tags:
             - install_butane_client
+
+        - name: Get helm client installed version
+          shell: |
+            /usr/local/bin/helm version -c -o json | jq -r .version | sed 's/^v//'
+          register: helm_client_version
+          changed_when: false
+          failed_when: false
+          tags:
+            - install_helm_client
+
+        - name: Set fact for current helm client installation
+          set_fact:
+            helm_version_installed: '{{ helm_client_version.stdout if helm_client_version.rc == 0 else "not_installed" }}'
+          tags:
+            - install_helm_client
+
+        - name: Remove previous versions of helm clients if target version is different
+          ansible.builtin.file:
+            path: /usr/local/bin/helm
+            state: absent
+          when:
+            - helm_version_installed != helm_version
+          tags:
+            - install_helm_client
 
         - name: 'Install Helm client version: {{ helm_version }}'
           ansible.builtin.get_url:
             url: '{{ repo_base_url }}/{{ ocp_arch }}/clients/helm/{{ helm_version }}/{{ helm_package }}'
             dest: /usr/local/bin/helm
-            mode: 0755 
+            mode: 0755
+          when:
+            - helm_version_installed != helm_version
           tags:
             - install_helm_client
 
-        - name: We are done here. Goodbye horses.....
+        - name: Display installation complete message
           ansible.builtin.debug:
             msg:
-              - 'The Openshift client and friends are  now installed under the /usr/local/bin directory.'
-              - 'Make sure /usr/local/bin exists in your shells $PATH'
-              - 'For the latest releases of these binaries: https://mirror.openshift.com/pub/'
-              - 'You break it, you buy it, my friend.'
+              - 'The OpenShift client and related tools are now installed in /usr/local/bin.'
+              - 'Ensure /usr/local/bin is in your shell PATH variable.'
+              - 'For the latest binary releases, visit: https://mirror.openshift.com/pub/'
           tags:
             - install_ocp_client
             - install_butane_client
             - install_helm_client
-            - bye
